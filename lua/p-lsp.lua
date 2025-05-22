@@ -58,19 +58,23 @@ require 'lspconfig'.lua_ls.setup {
             -- Make the server aware of Neovim runtime files
             workspace = {
                 checkThirdParty = false,
-                library = {
-                    vim.env.VIMRUNTIME
-                    -- Depending on the usage, you might want to add additional paths here.
-                    -- "${3rd}/luv/library"
-                    -- "${3rd}/busted/library",
-                }
+                -- library = {
+                --     vim.env.VIMRUNTIME
+                --     -- Depending on the usage, you might want to add additional paths here.
+                --     -- "${3rd}/luv/library"
+                --     -- "${3rd}/busted/library",
+                -- }
                 -- or pull in all of 'runtimepath'. NOTE: this is a lot slower
-                -- library = vim.api.nvim_get_runtime_file("", true)
+                library = vim.api.nvim_get_runtime_file("", true)
             }
         })
     end,
     settings = {
-        Lua = {}
+        Lua = {
+            hint = {
+                enable = true
+            }
+        }
     }
 }
 
@@ -79,12 +83,27 @@ lspconfig.clangd.setup {
     cmd = { "clangd", "--header-insertion=never", "--inlay-hints=true" },
 }
 
+vim.lsp.config('yamlls', {
+    settings = {
+        yaml = {
+            schemas = {
+                ["https://raw.githubusercontent.com/yannh/kubernetes-json-schema/refs/heads/master/v1.32.1-standalone-strict/all.json"] =
+                "/*.k8s.yaml",
+            },
+        },
+    }
+})
+
 
 -- Global mappings.
 -- See `:help vim.diagnostic.*` for documentation on any of the below functions
 vim.keymap.set('n', '<space>le', vim.diagnostic.open_float)
-vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
-vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
+vim.keymap.set('n', '[d', function()
+    vim.diagnostic.jump({ count = -1 })
+end)
+vim.keymap.set('n', ']d', function()
+    vim.diagnostic.jump({ count = 1 })
+end)
 vim.keymap.set('n', '<space>lq', vim.diagnostic.setloclist)
 
 -- Use LspAttach autocommand to only map the following keys
@@ -134,15 +153,10 @@ vim.api.nvim_create_autocmd('LspAttach', {
 --   )
 -- end
 
-
-if vim.lsp.inlay_hint then
-    vim.keymap.set(
-        "n",
-        "<leader>lh",
-        function()
-            local isEnabled = vim.lsp.inlay_hint.is_enabled({ bufnr = 0 })
-            vim.lsp.inlay_hint.enable(not isEnabled, { bufnr = 0 }) -- Correctly passing a table as the second argument
-        end,
-        { desc = "Toggle Inlay Hints" }
-    )
-end
+vim.keymap.set(
+    "n",
+    "<leader>lh",
+    function()
+        vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled(), { bufnr = 0 })
+    end
+)
